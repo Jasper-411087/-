@@ -21,6 +21,7 @@ var current_phase: int = 1
 var player_hp: int = PLAYER_HP_MAX
 var boss_hp: int = BOSS_HP[1]
 var score: int = START_SCORE
+var cleared: bool = false  # 本局是否通關（結算畫面用）
 
 
 ## 以指定關卡重設所有起始值
@@ -29,6 +30,7 @@ func reset(phase: int = current_phase) -> void:
 	player_hp = PLAYER_HP_MAX
 	boss_hp = BOSS_HP[phase]
 	score = START_SCORE
+	cleared = false
 
 
 ## 套用一次判定（grade: perfect/good/bad/miss）
