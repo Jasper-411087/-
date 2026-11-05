@@ -105,3 +105,49 @@ offset_right = 240.0
 offset_bottom = 1040.0
 theme_override_font_sizes/font_size = 28
 text = "返回選關"
+
+[node name="Combo" type="Label" parent="HUD"]
+layout_mode = 0
+offset_left = 660.0
+offset_top = 700.0
+offset_right = 1260.0
+offset_bottom = 780.0
+theme_override_font_sizes/font_size = 56
+horizontal_alignment = 1
+
+[node name="PauseMenu" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Dim" type="ColorRect" parent="PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="Buttons" type="VBoxContainer" parent="PauseMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -80.0
+offset_right = 150.0
+offset_bottom = 80.0
+theme_override_constants/separation = 24
+
+[node name="Resume" type="Button" parent="PauseMenu/Buttons"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "繼續（Esc）"
+
+[node name="Quit" type="Button" parent="PauseMenu/Buttons"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "回選關"

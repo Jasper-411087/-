@@ -14,4 +14,5 @@ func go_to(scene_name: String) -> void:
 	if not SCENES.has(scene_name):
 		push_error("Unknown scene: %s" % scene_name)
 		return
+	get_tree().paused = false
 	get_tree().change_scene_to_file(SCENES[scene_name])

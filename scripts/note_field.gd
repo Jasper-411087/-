@@ -35,10 +35,16 @@ func _draw() -> void:
 		if n["done"]:
 			continue
 		var y: float = JUDGE_Y - (n["t"] - song_time) * SCROLL_SPEED
-		if y < -NOTE_H or y > size.y:
+		if n["holding"]:
+			y = JUDGE_Y
+		var y_tail: float = JUDGE_Y - (n["t"] + n["len"] - song_time) * SCROLL_SPEED
+		if y < -NOTE_H or y_tail > size.y:
 			continue
 		var x: float = left + n["lane"] * LANE_W
-		draw_rect(Rect2(x + 8, y - NOTE_H / 2.0, LANE_W - 16, NOTE_H), LANE_COLORS[n["lane"]])
+		var col: Color = LANE_COLORS[n["lane"]]
+		if n["len"] > 0.0:
+			draw_rect(Rect2(x + 30, y_tail, LANE_W - 60, y - y_tail), Color(col, 0.55 if n["holding"] else 0.35))
+		draw_rect(Rect2(x + 8, y - NOTE_H / 2.0, LANE_W - 16, NOTE_H), col)
 
 	if last_grade != "":
 		draw_string(_font, Vector2(left, JUDGE_Y - 120), last_grade.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, LANE_W * LANE_COUNT, 48)

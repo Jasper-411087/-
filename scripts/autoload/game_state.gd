@@ -21,6 +21,9 @@ var current_phase: int = 1
 var player_hp: int = PLAYER_HP_MAX
 var boss_hp: int = BOSS_HP[1]
 var score: int = START_SCORE
+var combo: int = 0
+var max_combo: int = 0
+var counts := {"perfect": 0, "good": 0, "bad": 0, "miss": 0}
 var cleared: bool = false  # 本局是否通關（結算畫面用）
 
 
@@ -30,6 +33,9 @@ func reset(phase: int = current_phase) -> void:
 	player_hp = PLAYER_HP_MAX
 	boss_hp = BOSS_HP[phase]
 	score = START_SCORE
+	combo = 0
+	max_combo = 0
+	counts = {"perfect": 0, "good": 0, "bad": 0, "miss": 0}
 	cleared = false
 
 
@@ -38,6 +44,12 @@ func apply_judgement(grade: String) -> void:
 	player_hp = clampi(player_hp + PLAYER_HP_DELTA[grade], 0, PLAYER_HP_MAX)
 	boss_hp = clampi(boss_hp + BOSS_HP_DELTA[grade], 0, BOSS_HP[current_phase])
 	score += SCORE_DELTA[grade]
+	counts[grade] += 1
+	if grade == "perfect" or grade == "good":
+		combo += 1
+		max_combo = maxi(max_combo, combo)
+	else:
+		combo = 0
 
 
 func is_cleared() -> bool:

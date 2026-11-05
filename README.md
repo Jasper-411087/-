@@ -18,5 +18,11 @@ Godot 4.3（GL Compatibility）開發的直立式 4K 節奏遊戲。按鍵：D /
 - 音檔放 `assets/audio/phaseN.ogg`，存在時會自動播放
 
 ## 待辦
-- Hold / 滑動音符（Phase 2、3）、Boss 圖與動畫、音效、正式譜面
+- 滑動音符（Phase 3，待確認規格）、Boss 圖與動畫、音效、正式譜面
 - 確認 Bad 對 Boss 血量的數值（見 `game_state.gd` 的 TODO）
+
+## 工具
+- `tools/gen_charts.sh`：重新產生測試譜面
+- 自動演奏驗證（無畫面，確認三關可通關）：
+  `Godot_console.exe --headless --path . res://tools/autoplay_test.tscn`
+- 遊戲中按 Esc 暫停；譜面可用 `"len"` 欄位（秒）定義 Hold
