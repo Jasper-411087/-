@@ -37,7 +37,7 @@ func _draw() -> void:
 		var y: float = JUDGE_Y - (n["t"] - song_time) * SCROLL_SPEED
 		if y < -NOTE_H or y > size.y:
 			continue
-		var x := left + n["lane"] * LANE_W
+		var x: float = left + n["lane"] * LANE_W
 		draw_rect(Rect2(x + 8, y - NOTE_H / 2.0, LANE_W - 16, NOTE_H), LANE_COLORS[n["lane"]])
 
 	if last_grade != "":
