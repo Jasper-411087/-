@@ -5,13 +5,14 @@ config_version=5
 
 config/name="3026：放學前的解碼戰"
 config/description="4K 節奏遊戲 — 國立新竹科學園區實驗高級中學 高二校訂必修專題實作"
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
 GameState="*res://scripts/autoload/game_state.gd"
+SceneManager="*res://scripts/autoload/scene_manager.gd"
 
 [display]
 
