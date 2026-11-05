@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/note_field.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/boss.gd" id="3"]
 
 [node name="Game" type="Control"]
 layout_mode = 3
@@ -24,6 +25,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 script = ExtResource("2")
+
+[node name="Boss" type="Control" parent="."]
+layout_mode = 0
+offset_left = 1450.0
+offset_top = 480.0
+offset_right = 1850.0
+offset_bottom = 880.0
+mouse_filter = 2
+script = ExtResource("3")
 
 [node name="HUD" type="Control" parent="."]
 layout_mode = 1

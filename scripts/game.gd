@@ -21,6 +21,7 @@ const END_DELAY := 1.5 # 最後一個音符後等待
 @onready var progress_bar: ProgressBar = $HUD/Progress
 @onready var phase_label: Label = $HUD/PhaseLabel
 @onready var pause_menu: Control = $PauseMenu
+@onready var boss: Control = $Boss
 
 var notes: Array = []
 var song_time := -LEAD_IN
@@ -51,6 +52,7 @@ func _ready() -> void:
 	boss_hp_bar.max_value = GameState.BOSS_HP[GameState.current_phase]
 	progress_bar.max_value = maxf(song_length, 0.01)
 	phase_label.text = "Phase %d" % GameState.current_phase
+	boss.setup(GameState.current_phase)
 	$HUD/Back.pressed.connect(func(): SceneManager.go_to("level_select"))
 	$PauseMenu/Buttons/Resume.pressed.connect(_set_paused.bind(false))
 	$PauseMenu/Buttons/Quit.pressed.connect(func(): SceneManager.go_to("level_select"))
@@ -156,7 +158,13 @@ func _update_hold(n: Dictionary) -> void:
 
 
 func _judge(grade: String) -> void:
+	var boss_before := GameState.boss_hp
 	GameState.apply_judgement(grade)
+	if GameState.boss_hp < boss_before:
+		boss.on_damage()
+	elif GameState.boss_hp > boss_before:
+		boss.on_heal()
+	Sfx.play(grade)
 	note_field.last_grade = grade
 	_refresh_hud()
 
@@ -175,5 +183,10 @@ func _finish() -> void:
 		audio_player.stop()
 	GameState.cleared = GameState.is_cleared()
 	finished.emit()
-	if finished.get_connections().is_empty():
-		SceneManager.go_to("result")
+	if not finished.get_connections().is_empty():
+		return  # 測試工具接手，不切場景
+	Sfx.play("clear" if GameState.cleared else "fail", -3.0)
+	if GameState.cleared:
+		boss.on_defeat()
+	await get_tree().create_timer(1.6).timeout
+	SceneManager.go_to("result")
