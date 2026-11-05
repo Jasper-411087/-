@@ -9,6 +9,5 @@ func _ready() -> void:
 
 
 func _start_phase(phase: int) -> void:
-	GameState.reset()
-	GameState.current_phase = phase
+	GameState.reset(phase)
 	SceneManager.go_to("game")
