@@ -32,7 +32,7 @@ Godot 4.3（GL Compatibility）開發的直立式 4K 節奏遊戲。按鍵：D /
 ## 待辦
 - 正式譜面與音樂（巴哈《D小調觸技曲》、維瓦第《四季・夏》第三樂章、貝多芬《月光》第三樂章）
 - Boss 正式美術、劇情插圖、正式音效、字型
-- Hold 尾端判定規則待組內確認（目前：撐到尾端 Perfect、提早放開 Bad；頭 Miss 則頭尾各算一次 Miss）
+- 背景音樂：以 MIDI 製作（MuseScore 匯出 .ogg），並可由 MIDI 自動產生譜面初稿
 
 ## 工具
 - `tools/gen_charts.sh`：重新產生測試譜面（Phase 1 Tap；Phase 2 加 Hold、雙/三押；Phase 3 加對拍、四押）
