@@ -1,6 +1,6 @@
 extends Control
 ## Boss 占位圖與動畫（程式繪製）。之後可換成 Sprite2D / AnimatedSprite2D 的正式美術。
-## 動畫：待機浮動、受擊閃白、Miss 回血時抖動、被擊敗淡出。
+## 動畫：待機浮動、受擊閃白、Miss 回血時抖動、血量歸零時當機（暗化、X 眼）、通關時淡出。
 
 const SIZE := Vector2(400, 400)
 const PHASE_COLORS := {1: Color("ff6b4a"), 2: Color("9aa5b1"), 3: Color("b070ff")}
@@ -10,6 +10,7 @@ var _t := 0.0
 var _flash := 0.0     # 受擊閃白 0~1
 var _shake := 0.0     # 抖動強度
 var _defeated := false
+var _broken := false  # Boss 血量歸零（但音樂未結束，Miss 仍可能讓它回血）
 var _alpha := 1.0
 
 
@@ -22,6 +23,7 @@ func _ready() -> void:
 func setup(p: int) -> void:
 	phase = p
 	_defeated = false
+	_broken = false
 	_alpha = 1.0
 	queue_redraw()
 
@@ -32,6 +34,10 @@ func on_damage() -> void:
 
 func on_heal() -> void:
 	_shake = 1.0
+
+
+func set_broken(value: bool) -> void:
+	_broken = value
 
 
 func on_defeat() -> void:
@@ -53,6 +59,8 @@ func _draw() -> void:
 	var bob := sin(_t * 2.0) * 12.0
 	var jitter := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 10.0 * _shake
 	var center := SIZE / 2.0 + Vector2(0, bob) + jitter
+	if _broken:
+		c = c.darkened(0.6)
 	var body := c.lerp(Color.WHITE, _flash * 0.8)
 	body.a = _alpha
 	var dark := Color(0.08, 0.08, 0.12, _alpha)
@@ -86,5 +94,10 @@ func _draw() -> void:
 			continue
 		if phase == 3:
 			ep = center
+		if _broken:
+			var r := 16.0
+			draw_line(ep + Vector2(-r, -r), ep + Vector2(r, r), glow, 6.0)
+			draw_line(ep + Vector2(-r, r), ep + Vector2(r, -r), glow, 6.0)
+			continue
 		draw_circle(ep, 26.0 if phase == 3 else 20.0, glow)
 		draw_circle(ep + Vector2(0, 4), 10.0, dark)

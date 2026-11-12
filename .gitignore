@@ -11,4 +11,4 @@ build/
 Thumbs.db
 .vscode/
 
-.env
+.env__pycache__/
