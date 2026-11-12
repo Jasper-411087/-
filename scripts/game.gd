@@ -4,6 +4,7 @@ extends Control
 ## 2. 每幀：取得音樂播放時間 → 處理按鍵判定 → 逾時音符判 Miss → 更新 HUD
 ## 3. 勝敗：玩家血量 ≤ 0 立即失敗；音樂播完時 Boss 血量 ≤ 0 即通關，否則失敗
 ## 支援 Tap、Hold、多押（同一時間多個音符，含對拍、四押）。
+## Hold 按住期間每半拍 +1 combo（只加 combo，不影響分數、血量、準確率）。
 
 signal finished  # 測試工具可連接此訊號以攔截場景切換
 
@@ -11,6 +12,7 @@ const ChartLoader = preload("res://scripts/chart_loader.gd")
 const LANE_ACTIONS := ["lane_d", "lane_f", "lane_j", "lane_k"]
 const COUNTDOWN := 3.0  # 開始前倒數（秒）
 const END_DELAY := 1.5  # 沒有音檔時：最後一個音符後等待（秒）
+const DEFAULT_BPM := 120.0
 
 @onready var note_field: Control = $NoteField
 @onready var player_hp_bar: ProgressBar = $HUD/PlayerPanel/PlayerHP
@@ -41,9 +43,12 @@ func _ready() -> void:
 	GameState.reset(phase)
 	var chart := ChartLoader.load_chart(phase)
 	var objects := 0
+	var half_beat := 30.0 / float(chart.get("bpm", DEFAULT_BPM))
 	for n in chart["notes"]:
 		var hold_len := float(n.get("len", 0.0))
 		notes.append({
+			"tick": float(n.get("tick", half_beat)),  # Hold combo 間隔（半拍秒數）
+			"next_tick": 0.0,
 			"t": float(n["t"]),
 			"lane": int(n["lane"]),
 			"len": hold_len,
@@ -163,15 +168,23 @@ func _hit_lane(lane: int) -> void:
 		return
 	if best["len"] > 0.0:
 		best["holding"] = true  # Hold：頭判定後持續按住
+		best["next_tick"] = best["t"] + best["tick"]
 	else:
 		best["done"] = true
-	_judge(grade)
+	# 按得比音符早 = FAST，晚 = LATE（Perfect 不顯示）
+	var timing := ""
+	if grade != "perfect":
+		timing = "FAST" if best["t"] > song_time else "LATE"
+	_judge(grade, timing)
 
 
-## Hold 尾端判定：撐到尾端（容許提早放開 Good 範圍內）= Perfect；太早放開 = Bad
+## Hold：按住期間每半拍 +1 combo；尾端撐到（容許提早放開 Good 範圍內）= Perfect；太早放開 = Bad
 func _update_hold(n: Dictionary) -> void:
 	var end_time: float = n["t"] + n["len"]
 	var pressed := Input.is_action_pressed(LANE_ACTIONS[n["lane"]])
+	while pressed and n["next_tick"] < end_time - 0.05 and song_time >= n["next_tick"]:
+		n["next_tick"] += n["tick"]
+		GameState.add_combo_tick()
 	if song_time >= end_time or (not pressed and song_time >= end_time - GameState.WINDOW["good"]):
 		n["done"] = true
 		n["holding"] = false
@@ -182,7 +195,7 @@ func _update_hold(n: Dictionary) -> void:
 		_judge("bad")
 
 
-func _judge(grade: String) -> void:
+func _judge(grade: String, timing: String = "") -> void:
 	var boss_before: int = GameState.boss_hp
 	GameState.apply_judgement(grade)
 	if GameState.boss_hp < boss_before:
@@ -191,7 +204,7 @@ func _judge(grade: String) -> void:
 		boss.on_heal()
 	boss.set_broken(GameState.boss_hp <= 0)
 	Sfx.play(grade)
-	note_field.show_grade(grade)
+	note_field.show_grade(grade, timing)
 	_refresh_hud()
 
 

@@ -18,6 +18,7 @@ Godot 4.3（GL Compatibility）開發的直立式 4K 節奏遊戲。按鍵：D /
 - `GameState`（autoload）：血量、分數、判定範圍（±70/110/135ms）、各判定數值、準確率
 - `SceneManager`（autoload）：場景切換與劇情流程（`new_game()`、`start_phase(n)`、`play_story(key)`）
 - `Sfx`（autoload）：音效（程式合成占位，可放正式音檔覆蓋）
+- `Settings`（autoload）：玩家設定（流速），存在 `user://settings.cfg`
 - `scripts/game.gd`：遊玩流程（倒數 3 秒、音樂時間同步、判定、勝敗檢查、HUD）
 - `scripts/note_field.gd`：繪製 4 軌與音符　`scripts/boss.gd`：Boss 占位圖與動畫
 - `scripts/story.gd`：劇情過場，文字在 `data/story.json`（可直接改；每頁可加 `"image"` 背景圖）
@@ -28,10 +29,15 @@ Godot 4.3（GL Compatibility）開發的直立式 4K 節奏遊戲。按鍵：D /
 - MIDI 來源：The Mutopia Project，授權與來源截圖見 `docs/素材來源/`（《夏》《月光》為 CC BY-SA，需標示出處）
 - `tools/build_music.sh [1|2|3]`：由 MIDI 同時產生音檔與譜面（需 python3、fluidsynth、ffmpeg）
 - `tools/midi_to_chart.py --info 檔案.mid` 查看 MIDI；各關密度、多押、Hold 規則在該檔 `PHASES`
+- 採音規則：依段落強度（音符密度＋力度）調整密度，溫和段落較疏、高潮較密；
+  雙押左右手各一、三押相鄰三軌；快速段落避免同軌連打並優先換手；Hold 時優先用另一隻手
 - 想換段落或速度：改 `build_music.sh` 最後三行的 start / end / speed 再重跑
 
 ## 操作
-- D F J K：四軌　Esc：暫停（繼續／重新挑戰／回主選單）
+- D F J K：四軌　Esc：暫停（流速／繼續／重新挑戰／回主選單）
+- 流速：主選單或暫停選單的「－ ＋」調整（3.0 ~ 20.0）
+- 判定顯示：Good / Bad 會在下方顯示 FAST（按太早）或 LATE（按太晚）
+- Hold：按住期間每半拍 +1 combo；太早放開判 Bad
 - 劇情：Enter／空白鍵／滑鼠左鍵 下一頁，Esc 跳過
 - 開發捷徑：主選單按 F1 / F2 / F3 直接進入該關
 

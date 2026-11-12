@@ -21,13 +21,17 @@ import os
 import struct
 import sys
 
-# 每關參數：min_gap 兩個音符最小間隔（秒）；max_chord 最多幾押；
-# chord_every 多押最短間隔（秒，避免太頻繁）；hold_min 音長超過即為 Hold；jack_gap 對拍觸發的最大間隔
+# 每關參數：
+#   min_gap     基準音符最小間隔（秒）；實際間隔依段落強度在 ×1.6（溫和）~ ×0.7（高潮）之間
+#   max_chord   最多幾押；chord_level 段落強度超過此值才放多押；chord_every 多押最短間隔（秒）
+#   hold_min    音長超過即為 Hold；jack_level 段落強度超過此值才放對拍（左 2 右 2）
 PHASES = {
-    1: dict(min_gap=0.30, max_chord=1, chord_every=999, hold_min=999, jack_gap=0, boss=200),
-    2: dict(min_gap=0.26, max_chord=3, chord_every=1.2, hold_min=0.60, jack_gap=0, boss=400),
-    3: dict(min_gap=0.17, max_chord=4, chord_every=0.9, hold_min=0.55, jack_gap=0.22, boss=700),
+    1: dict(min_gap=0.25, max_chord=1, chord_level=2.0, chord_every=999, hold_min=999, jack_level=2.0, boss=200),
+    2: dict(min_gap=0.22, max_chord=3, chord_level=0.55, chord_every=1.0, hold_min=0.60, jack_level=2.0, boss=400),
+    3: dict(min_gap=0.16, max_chord=4, chord_level=0.50, chord_every=0.8, hold_min=0.55, jack_level=0.70, boss=700),
 }
+CALM_MUL, CLIMAX_MUL = 1.6, 0.7
+WINDOW = 2.0  # 計算段落強度的前後視窗（秒）
 GROUP_EPS = 0.035  # 這個時間內的音視為同時（和弦）
 
 
@@ -43,7 +47,7 @@ def _varlen(data, i):
 
 
 def parse_midi(path):
-    """回傳 notes: [(start秒, end秒, pitch, velocity, track)]"""
+    """回傳 (notes, 音軌數, tempos)；notes: [(start秒, end秒, pitch, velocity, track)]，tempos: [(秒, BPM)]"""
     data = open(path, "rb").read()
     if data[:4] != b"MThd":
         raise ValueError("不是 MIDI 檔")
@@ -113,7 +117,8 @@ def parse_midi(path):
             st, v = open_notes[key].pop(0)
             notes.append((tick_to_sec(st), tick_to_sec(tick), pitch, v, trk))
     notes.sort()
-    return notes, ntrk
+    tempo_sec = [(tick_to_sec(t), 60e6 / u) for t, u in tempos]
+    return notes, ntrk, tempo_sec
 
 
 # ---------- 選音 ----------
@@ -127,58 +132,145 @@ def group_onsets(notes):
     return groups
 
 
-def make_chart(notes, phase, start, end, speed, offset, tracks=None):
+def bpm_at(tempos, sec):
+    bpm = tempos[0][1]
+    for t, b in tempos:
+        if t > sec:
+            break
+        bpm = b
+    return bpm
+
+
+def _rank(values):
+    """轉成 0~1 的百分位"""
+    order = sorted(range(len(values)), key=lambda i: values[i])
+    r = [0.0] * len(values)
+    for k, i in enumerate(order):
+        r[i] = k / max(1, len(values) - 1)
+    return r
+
+
+def intensity(groups, notes):
+    """段落強度 0~1：前後 WINDOW 秒內的音符密度（65%）與平均力度（35%），再平滑"""
+    times = [n[0] for n in notes]
+    import bisect
+    dens, vel = [], []
+    for g in groups:
+        t = g[0][0]
+        lo, hi = bisect.bisect_left(times, t - WINDOW), bisect.bisect_right(times, t + WINDOW)
+        seg = notes[lo:hi]
+        dens.append(len(seg))
+        vel.append(sum(n[3] for n in seg) / max(1, len(seg)))
+    raw = [0.65 * d + 0.35 * v for d, v in zip(_rank(dens), _rank(vel))]
+    out = []
+    for i in range(len(raw)):  # 簡單平滑，避免強度忽高忽低
+        w = raw[max(0, i - 4):i + 5]
+        out.append(sum(w) / len(w))
+    return out
+
+
+LEFT, RIGHT = (0, 1), (2, 3)
+
+
+def hand_of(lane):
+    return 0 if lane < 2 else 1
+
+
+def chord_shape(size, pitches, lo, span):
+    """舒適的多押形狀：雙押左右手各一、三押相鄰三軌、四押全押"""
+    top_hi = (pitches[-1] - lo) / span > 0.5
+    low_hi = (pitches[0] - lo) / span > 0.35
+    if size >= 4:
+        return [0, 1, 2, 3]
+    if size == 3:
+        return [1, 2, 3] if top_hi else [0, 1, 2]
+    return [1 if low_hi else 0, 3 if top_hi else 2]
+
+
+def make_chart(notes, phase, start, end, speed, offset, tracks=None, tempos=None):
     cfg = PHASES[phase]
+    tempos = tempos or [(0.0, 120.0)]
     sel = [n for n in notes if start <= n[0] < end and (tracks is None or n[4] in tracks)]
     groups = group_onsets(sel)
+    level = intensity(groups, sel)
     out = []
     lane_busy = [-1.0] * 4  # 各軌被 Hold 佔用到的時間
-    last_t = -999.0
-    last_chord_t = -999.0
-    last_lane = -1
+    last_t, last_chord_t = -999.0, -999.0
+    last_lanes = []
     jack_side = 0
     lo, hi = 127, 0
-    for g in groups:
+    for g, lv in zip(groups, level):
         t = (g[0][0] - start) / speed + offset
-        if t - last_t < cfg["min_gap"] - 1e-6:
+        gap = cfg["min_gap"] * (CALM_MUL + (CLIMAX_MUL - CALM_MUL) * lv)
+        dt = t - last_t
+        if dt < gap - 1e-6:
             continue
         pitches = sorted({n[2] for n in g})
         top = max(g, key=lambda n: n[2])
-        # 動態音域（慢慢回歸）決定軌道：高音在右、低音在左
-        lo = min(lo + 0.5, top[2]); hi = max(hi - 0.5, top[2])
+        lo = min(lo + 0.5, pitches[0]); hi = max(hi - 0.5, top[2])
         span = max(hi - lo, 6)
-        lane = min(3, int((top[2] - lo) / span * 4))
-        if lane == last_lane and t - last_t < cfg["min_gap"] * 1.6:
-            lane = (lane + (1 if lane < 2 else -1)) % 4  # 避免太快的同軌連打
         free = [l for l in range(4) if lane_busy[l] < t - 0.05]
         if not free:
             continue
-        if lane not in free:
-            lane = min(free, key=lambda l: abs(l - lane))
+        held_hands = {hand_of(l) for l in range(4) if lane_busy[l] >= t - 0.05}
 
-        # 對拍（Phase 3）：連續快速的和弦 → 左 2 / 右 2 交替
-        if cfg["jack_gap"] and len(pitches) >= 2 and t - last_t <= cfg["jack_gap"] and all(lane_busy[l] < t - 0.05 for l in range(4)):
+        # 對拍（高潮段落、連續快速的和弦）：左 2 / 右 2 交替
+        if lv >= cfg["jack_level"] and len(pitches) >= 2 and dt <= gap * 2.2 and len(free) == 4:
             jack_side = 1 - jack_side
-            for l in (jack_side * 2, jack_side * 2 + 1):
+            lanes = list(LEFT if jack_side == 0 else RIGHT)
+            for l in lanes:
                 out.append({"t": round(t, 3), "lane": l, "len": 0.0})
-            last_t, last_lane = t, -1
+            last_t, last_lanes = t, lanes
             continue
 
+        # 多押（段落強度夠、距上次多押夠久）
         size = 1
-        if cfg["max_chord"] > 1 and len(pitches) >= 2 and t - last_chord_t >= cfg["chord_every"]:
-            size = min(cfg["max_chord"], len(pitches), len(free))
-            if size > 1:
-                last_chord_t = t
+        if cfg["max_chord"] > 1 and len(pitches) >= 2 and lv >= cfg["chord_level"] \
+                and t - last_chord_t >= cfg["chord_every"] * (1.5 - lv):
+            # 一般為雙押，段落越強越可能三押、四押
+            size = 2
+            if lv >= 0.72 and len(pitches) >= 3:
+                size = 3
+            if lv >= 0.85 and len(pitches) >= 4:
+                size = 4
+            size = min(size, cfg["max_chord"])
+            shape = [l for l in chord_shape(size, pitches, lo, span) if l in free]
+            if size == 3 and last_lanes and set(shape) & set(last_lanes):
+                alt = [l for l in ([0, 1, 2] if shape == [1, 2, 3] else [1, 2, 3]) if l in free]
+                if not set(alt) & set(last_lanes):
+                    shape = alt  # 換另一側的三押，避開剛按過的軌
+            if len(shape) >= 2 and not (dt < max(gap * 1.2, 0.25) and set(shape) & set(last_lanes)):
+                for l in shape:
+                    out.append({"t": round(t, 3), "lane": l, "len": 0.0})
+                last_t, last_chord_t, last_lanes = t, t, shape
+                continue
+
+        # 單押：依音高決定位置（低音左、高音右），再依手順修正
+        want = min(3, int((top[2] - lo) / span * 4))
+        cand = list(free)
+        fast = dt < gap * 1.6
+        if fast and last_lanes:
+            # 快速段落：避免同軌連打；單音之後優先換手
+            cand = [l for l in cand if l not in last_lanes] or cand
+            if len(last_lanes) == 1:
+                other = [l for l in cand if hand_of(l) != hand_of(last_lanes[0])]
+                cand = other or cand
+        if all(l in last_lanes for l in cand) and dt < 0.3:
+            continue  # 剛按完多押，只剩同軌可放 → 略過，避免太快的同軌連打
+        if held_hands:  # 有 Hold 按住時，優先用另一隻手
+            other = [l for l in cand if hand_of(l) not in held_hands]
+            cand = other or cand
+        lane = min(cand, key=lambda l: (abs(l - want), l))
+
         dur = (top[1] - top[0]) / speed
-        if size == 1 and dur >= cfg["hold_min"]:
+        bpm = bpm_at(tempos, top[0]) * speed
+        if dur >= cfg["hold_min"]:
             hlen = round(min(dur, 2.0), 3)
-            out.append({"t": round(t, 3), "lane": lane, "len": hlen})
+            out.append({"t": round(t, 3), "lane": lane, "len": hlen, "tick": round(30.0 / bpm, 4)})
             lane_busy[lane] = t + hlen
         else:
-            lanes = [lane] + sorted((l for l in free if l != lane), key=lambda l: abs(l - lane))
-            for l in lanes[:size]:
-                out.append({"t": round(t, 3), "lane": l, "len": 0.0})
-        last_t, last_lane = t, lane
+            out.append({"t": round(t, 3), "lane": lane, "len": 0.0})
+        last_t, last_lanes = t, [lane]
     return out
 
 
@@ -195,7 +287,7 @@ def main():
     ap.add_argument("--out", type=str, default="")
     a = ap.parse_args()
 
-    notes, ntrk = parse_midi(a.midi)
+    notes, ntrk, tempos = parse_midi(a.midi)
     if a.info:
         length = max(n[1] for n in notes) if notes else 0
         print(f"{a.midi}: {ntrk} 軌, 長度 {length:.1f} 秒, {len(notes)} 個音")
@@ -207,18 +299,19 @@ def main():
     if not a.phase:
         ap.error("請指定 --phase")
     tracks = {int(x) for x in a.tracks.split(",")} if a.tracks else None
-    chart = make_chart(notes, a.phase, a.start, a.end, a.speed, a.offset, tracks)
+    chart = make_chart(notes, a.phase, a.start, a.end, a.speed, a.offset, tracks, tempos)
     objs = sum(2 if n["len"] > 0 else 1 for n in chart)
     out = a.out or os.path.join(os.path.dirname(__file__), "..", "data", "charts", f"phase{a.phase}.json")
     doc = {
         "phase": a.phase,
+        "bpm": round(bpm_at(tempos, a.start) * a.speed, 2),
         "audio": f"res://assets/audio/phase{a.phase}.ogg",
         "source": {"midi": os.path.basename(a.midi), "start": a.start, "end": a.end, "speed": a.speed, "offset": a.offset},
         "notes": chart,
     }
     with open(out, "w", encoding="utf-8") as f:
         f.write("{\n")
-        for k in ("phase", "audio", "source"):
+        for k in ("phase", "bpm", "audio", "source"):
             f.write(f'\t"{k}": {json.dumps(doc[k], ensure_ascii=False)},\n')
         f.write('\t"notes": [\n')
         f.write(",\n".join("\t\t" + json.dumps(n) for n in chart))

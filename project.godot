@@ -14,6 +14,7 @@ config/icon="res://icon.svg"
 GameState="*res://scripts/autoload/game_state.gd"
 SceneManager="*res://scripts/autoload/scene_manager.gd"
 Sfx="*res://scripts/autoload/sfx.gd"
+Settings="*res://scripts/autoload/settings.gd"
 
 [display]
 

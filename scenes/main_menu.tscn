@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/main_menu.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/speed_control.gd" id="2"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -43,16 +44,20 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -150.0
+offset_left = -200.0
 offset_top = -100.0
-offset_right = 150.0
-offset_bottom = 100.0
+offset_right = 200.0
+offset_bottom = 180.0
 theme_override_constants/separation = 24
 
 [node name="Start" type="Button" parent="Buttons"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "開始遊戲"
+
+[node name="Speed" type="HBoxContainer" parent="Buttons"]
+layout_mode = 2
+script = ExtResource("2")
 
 [node name="Quit" type="Button" parent="Buttons"]
 layout_mode = 2

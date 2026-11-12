@@ -75,6 +75,12 @@ func apply_judgement(grade: String) -> void:
 		combo = 0
 
 
+## Hold 按住期間的半拍 combo（不影響分數、血量、準確率）
+func add_combo_tick() -> void:
+	combo += 1
+	max_combo = maxi(max_combo, combo)
+
+
 ## 準確率 = 總分 / (總物量 × 100)，回傳 0~1
 func accuracy() -> float:
 	if total_objects <= 0:
