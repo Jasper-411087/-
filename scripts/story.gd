@@ -65,9 +65,12 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# 先標記輸入已處理，再換頁／離開：換場景後此節點已不在場景樹，get_viewport() 會是 null
 	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
 		_finish()
 	elif event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		get_viewport().set_input_as_handled()
 		_advance()
 
 

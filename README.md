@@ -21,8 +21,14 @@ Godot 4.3（GL Compatibility）開發的直立式 4K 節奏遊戲。按鍵：D /
 - `scripts/game.gd`：遊玩流程（倒數 3 秒、音樂時間同步、判定、勝敗檢查、HUD）
 - `scripts/note_field.gd`：繪製 4 軌與音符　`scripts/boss.gd`：Boss 占位圖與動畫
 - `scripts/story.gd`：劇情過場，文字在 `data/story.json`（可直接改；每頁可加 `"image"` 背景圖）
-- `data/charts/phaseN.json`：譜面 `{"t": 秒, "lane": 0~3, "len": Hold 長度秒}`，目前為**測試用隨機譜面**
-- 音檔放 `assets/audio/phaseN.ogg`，存在時會自動播放，且以音樂長度作為關卡長度
+- `data/charts/phaseN.json`：譜面 `{"t": 秒, "lane": 0~3, "len": Hold 長度秒}`，由 MIDI 自動產生（可再手動修改）
+- `assets/audio/phaseN.ogg`：背景音樂，由 `assets/music_src/*.mid` 合成；以音樂長度作為關卡長度
+
+## 音樂與譜面（MIDI）
+- MIDI 來源：The Mutopia Project，授權與來源截圖見 `docs/素材來源/`（《夏》《月光》為 CC BY-SA，需標示出處）
+- `tools/build_music.sh [1|2|3]`：由 MIDI 同時產生音檔與譜面（需 python3、fluidsynth、ffmpeg）
+- `tools/midi_to_chart.py --info 檔案.mid` 查看 MIDI；各關密度、多押、Hold 規則在該檔 `PHASES`
+- 想換段落或速度：改 `build_music.sh` 最後三行的 start / end / speed 再重跑
 
 ## 操作
 - D F J K：四軌　Esc：暫停（繼續／重新挑戰／回主選單）
@@ -30,11 +36,10 @@ Godot 4.3（GL Compatibility）開發的直立式 4K 節奏遊戲。按鍵：D /
 - 開發捷徑：主選單按 F1 / F2 / F3 直接進入該關
 
 ## 待辦
-- 正式譜面與音樂（巴哈《D小調觸技曲》、維瓦第《四季・夏》第三樂章、貝多芬《月光》第三樂章）
+- 實際試玩三關，手動微調自動產生的譜面
 - Boss 正式美術、劇情插圖、正式音效、字型
-- 背景音樂：以 MIDI 製作（MuseScore 匯出 .ogg），並可由 MIDI 自動產生譜面初稿
 
 ## 工具
-- `tools/gen_charts.sh`：重新產生測試譜面（Phase 1 Tap；Phase 2 加 Hold、雙/三押；Phase 3 加對拍、四押）
+- `tools/gen_charts.sh`：產生隨機測試譜面（**會覆蓋**正式譜面，僅供測試）（Phase 1 Tap；Phase 2 加 Hold、雙/三押；Phase 3 加對拍、四押）
 - 自動驗證（無畫面；完美擊打三關都要通關、不按三關都要失敗，結束碼 0 = 通過）：
   `Godot_console.exe --headless --path . res://tools/autoplay_test.tscn`
