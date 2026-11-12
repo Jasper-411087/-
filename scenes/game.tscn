@@ -1,8 +1,37 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/note_field.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/boss.gd" id="3"]
+
+[sub_resource type="StyleBoxFlat" id="panel"]
+bg_color = Color(0.09, 0.42, 0.33, 0.85)
+border_width_bottom = 2
+border_color = Color(0.49, 0.94, 0.66, 0.5)
+
+[sub_resource type="StyleBoxFlat" id="bar_bg"]
+bg_color = Color(0, 0, 0, 0.45)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="fill_player"]
+bg_color = Color(0.49, 0.94, 0.66, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="fill_boss"]
+bg_color = Color(1, 0.42, 0.42, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="fill_progress"]
+bg_color = Color(0.31, 0.82, 1, 1)
 
 [node name="Game" type="Control"]
 layout_mode = 3
@@ -16,6 +45,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+mouse_filter = 2
 color = Color(0.07, 0.08, 0.15, 1)
 
 [node name="NoteField" type="Control" parent="."]
@@ -28,10 +58,10 @@ script = ExtResource("2")
 
 [node name="Boss" type="Control" parent="."]
 layout_mode = 0
-offset_left = 1450.0
-offset_top = 480.0
-offset_right = 1850.0
-offset_bottom = 880.0
+offset_left = 1510.0
+offset_top = 600.0
+offset_right = 1910.0
+offset_bottom = 1000.0
 mouse_filter = 2
 script = ExtResource("3")
 
@@ -42,88 +72,199 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="PhaseLabel" type="Label" parent="HUD"]
+[node name="PlayerPanel" type="Panel" parent="HUD"]
 layout_mode = 0
-offset_left = 40.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 420.0
+offset_bottom = 270.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("panel")
+
+[node name="Title" type="Label" parent="HUD/PlayerPanel"]
+layout_mode = 0
+offset_left = 30.0
 offset_top = 20.0
-offset_right = 400.0
-offset_bottom = 70.0
-theme_override_font_sizes/font_size = 36
-text = "Phase 1"
+offset_right = 390.0
+offset_bottom = 80.0
+theme_override_font_sizes/font_size = 44
+text = "玩家血量"
 
-[node name="BossHP" type="ProgressBar" parent="HUD"]
+[node name="PlayerHP" type="ProgressBar" parent="HUD/PlayerPanel"]
 layout_mode = 0
-offset_left = 560.0
-offset_top = 30.0
-offset_right = 1360.0
-offset_bottom = 60.0
-max_value = 200.0
-value = 200.0
-show_percentage = false
-
-[node name="Score" type="Label" parent="HUD"]
-layout_mode = 0
-offset_left = 1400.0
-offset_top = 30.0
-offset_right = 1880.0
-offset_bottom = 90.0
-theme_override_font_sizes/font_size = 40
-text = "分數 0"
-horizontal_alignment = 2
-
-[node name="PlayerHP" type="ProgressBar" parent="HUD"]
-layout_mode = 0
-offset_left = 80.0
-offset_top = 300.0
-offset_right = 380.0
-offset_bottom = 330.0
+offset_left = 30.0
+offset_top = 100.0
+offset_right = 390.0
+offset_bottom = 140.0
+theme_override_styles/background = SubResource("bar_bg")
+theme_override_styles/fill = SubResource("fill_player")
 max_value = 100.0
 value = 100.0
 show_percentage = false
 
-[node name="PlayerHPLabel" type="Label" parent="HUD"]
+[node name="PlayerHPValue" type="Label" parent="HUD/PlayerPanel"]
 layout_mode = 0
-offset_left = 80.0
-offset_top = 260.0
-offset_right = 380.0
-offset_bottom = 300.0
-theme_override_font_sizes/font_size = 28
-text = "玩家血量"
+offset_left = 30.0
+offset_top = 145.0
+offset_right = 390.0
+offset_bottom = 195.0
+theme_override_font_sizes/font_size = 34
+text = "100 / 100"
+horizontal_alignment = 2
+
+[node name="PhaseLabel" type="Label" parent="HUD/PlayerPanel"]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 205.0
+offset_right = 390.0
+offset_bottom = 250.0
+theme_override_colors/font_color = Color(1, 1, 1, 0.7)
+theme_override_font_sizes/font_size = 26
+text = "Phase 1"
+
+[node name="BossPanel" type="Panel" parent="HUD"]
+layout_mode = 0
+offset_left = 1500.0
+offset_top = 0.0
+offset_right = 1920.0
+offset_bottom = 270.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("panel")
+
+[node name="Title" type="Label" parent="HUD/BossPanel"]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 20.0
+offset_right = 390.0
+offset_bottom = 80.0
+theme_override_font_sizes/font_size = 44
+text = "boss血量"
+
+[node name="BossHP" type="ProgressBar" parent="HUD/BossPanel"]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 100.0
+offset_right = 390.0
+offset_bottom = 140.0
+theme_override_styles/background = SubResource("bar_bg")
+theme_override_styles/fill = SubResource("fill_boss")
+max_value = 200.0
+value = 200.0
+show_percentage = false
+
+[node name="BossHPValue" type="Label" parent="HUD/BossPanel"]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 145.0
+offset_right = 390.0
+offset_bottom = 195.0
+theme_override_font_sizes/font_size = 34
+text = "200 / 200"
+horizontal_alignment = 2
+
+[node name="BossName" type="Label" parent="HUD/BossPanel"]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 205.0
+offset_right = 390.0
+offset_bottom = 250.0
+theme_override_colors/font_color = Color(1, 1, 1, 0.7)
+theme_override_font_sizes/font_size = 26
+text = "異星矽基寄生體"
+
+[node name="ScorePanel" type="Panel" parent="HUD"]
+layout_mode = 0
+offset_left = 1500.0
+offset_top = 272.0
+offset_right = 1920.0
+offset_bottom = 540.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("panel")
+
+[node name="Title" type="Label" parent="HUD/ScorePanel"]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 20.0
+offset_right = 390.0
+offset_bottom = 80.0
+theme_override_font_sizes/font_size = 44
+text = "分數"
+
+[node name="Score" type="Label" parent="HUD/ScorePanel"]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 90.0
+offset_right = 390.0
+offset_bottom = 170.0
+theme_override_font_sizes/font_size = 64
+text = "0"
+horizontal_alignment = 2
+
+[node name="Accuracy" type="Label" parent="HUD/ScorePanel"]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 185.0
+offset_right = 390.0
+offset_bottom = 235.0
+theme_override_colors/font_color = Color(1, 1, 1, 0.8)
+theme_override_font_sizes/font_size = 30
+text = "準確率 0.00%"
+horizontal_alignment = 2
 
 [node name="Progress" type="ProgressBar" parent="HUD"]
 layout_mode = 0
-offset_left = 1500.0
-offset_top = 300.0
-offset_right = 1800.0
-offset_bottom = 330.0
+offset_left = 420.0
+offset_top = 0.0
+offset_right = 1500.0
+offset_bottom = 60.0
+theme_override_styles/background = SubResource("bar_bg")
+theme_override_styles/fill = SubResource("fill_progress")
+max_value = 1.0
+value = 1.0
 show_percentage = false
 
 [node name="ProgressLabel" type="Label" parent="HUD"]
 layout_mode = 0
-offset_left = 1500.0
-offset_top = 260.0
-offset_right = 1800.0
-offset_bottom = 300.0
-theme_override_font_sizes/font_size = 28
-text = "遊戲進度"
-
-[node name="Back" type="Button" parent="HUD"]
-layout_mode = 0
-offset_left = 40.0
-offset_top = 980.0
-offset_right = 240.0
-offset_bottom = 1040.0
-theme_override_font_sizes/font_size = 28
-text = "返回選關"
+offset_left = 420.0
+offset_top = 6.0
+offset_right = 1500.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 30
+text = "歌曲進度"
+horizontal_alignment = 1
 
 [node name="Combo" type="Label" parent="HUD"]
 layout_mode = 0
-offset_left = 660.0
-offset_top = 700.0
-offset_right = 1260.0
-offset_bottom = 780.0
+offset_left = 420.0
+offset_top = 380.0
+offset_right = 1500.0
+offset_bottom = 460.0
 theme_override_font_sizes/font_size = 56
 horizontal_alignment = 1
+
+[node name="Countdown" type="Label" parent="HUD"]
+layout_mode = 0
+offset_left = 420.0
+offset_top = 440.0
+offset_right = 1500.0
+offset_bottom = 620.0
+theme_override_colors/font_color = Color(1, 0.82, 0.4, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 140
+text = "3"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="KeyHint" type="Label" parent="HUD"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 1010.0
+offset_right = 400.0
+offset_bottom = 1060.0
+theme_override_colors/font_color = Color(1, 1, 1, 0.45)
+theme_override_font_sizes/font_size = 24
+text = "Esc 暫停"
 
 [node name="PauseMenu" type="Control" parent="."]
 visible = false
@@ -146,10 +287,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -150.0
-offset_top = -80.0
-offset_right = 150.0
-offset_bottom = 80.0
+offset_left = -160.0
+offset_top = -120.0
+offset_right = 160.0
+offset_bottom = 120.0
 theme_override_constants/separation = 24
 
 [node name="Resume" type="Button" parent="PauseMenu/Buttons"]
@@ -157,7 +298,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "繼續（Esc）"
 
+[node name="Restart" type="Button" parent="PauseMenu/Buttons"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "重新挑戰"
+
 [node name="Quit" type="Button" parent="PauseMenu/Buttons"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
-text = "回選關"
+text = "回主選單"
