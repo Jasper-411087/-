@@ -22,15 +22,15 @@ import struct
 import sys
 
 # 每關參數：
-#   min_gap     基準音符最小間隔（秒）；實際間隔依段落強度在 ×1.6（溫和）~ ×0.7（高潮）之間
+#   min_gap     基準音符最小間隔（秒）；實際間隔依段落強度在 ×calm（溫和）~ ×climax（高潮）之間
+#   calm        溫和段落的間隔倍率，越小 = 溫和段落也越密
 #   max_chord   最多幾押；chord_level 段落強度超過此值才放多押；chord_every 多押最短間隔（秒）
 #   hold_min    音長超過即為 Hold；jack_level 段落強度超過此值才放對拍（左 2 右 2）
 PHASES = {
-    1: dict(min_gap=0.25, max_chord=1, chord_level=2.0, chord_every=999, hold_min=999, jack_level=2.0, boss=200),
-    2: dict(min_gap=0.22, max_chord=3, chord_level=0.55, chord_every=1.0, hold_min=0.60, jack_level=2.0, boss=400),
-    3: dict(min_gap=0.16, max_chord=4, chord_level=0.50, chord_every=0.8, hold_min=0.55, jack_level=0.70, boss=700),
+    1: dict(min_gap=0.25, calm=1.6, climax=0.7, max_chord=1, chord_level=2.0, chord_every=999, hold_min=999, jack_level=2.0, boss=200),
+    2: dict(min_gap=0.19, calm=1.35, climax=0.7, max_chord=3, chord_level=0.40, chord_every=0.7, hold_min=0.60, jack_level=2.0, boss=400),
+    3: dict(min_gap=0.16, calm=0.95, climax=0.78, max_chord=4, chord_level=0.20, chord_every=0.7, hold_min=0.55, jack_level=0.55, boss=700),
 }
-CALM_MUL, CLIMAX_MUL = 1.6, 0.7
 WINDOW = 2.0  # 計算段落強度的前後視窗（秒）
 GROUP_EPS = 0.035  # 這個時間內的音視為同時（和弦）
 
@@ -201,7 +201,7 @@ def make_chart(notes, phase, start, end, speed, offset, tracks=None, tempos=None
     lo, hi = 127, 0
     for g, lv in zip(groups, level):
         t = (g[0][0] - start) / speed + offset
-        gap = cfg["min_gap"] * (CALM_MUL + (CLIMAX_MUL - CALM_MUL) * lv)
+        gap = cfg["min_gap"] * (cfg["calm"] + (cfg["climax"] - cfg["calm"]) * lv)
         dt = t - last_t
         if dt < gap - 1e-6:
             continue

@@ -28,5 +28,5 @@ build() {
 want=${1:-all}
 [[ $want == all || $want == 1 ]] && build 1 assets/music_src/bach_toccata_BWV565.mid      0 120 1.0
 [[ $want == all || $want == 2 ]] && build 2 assets/music_src/vivaldi_summer_mvt3.mid      0 156 1.0
-[[ $want == all || $want == 3 ]] && build 3 assets/music_src/beethoven_moonlight_mvt3.mid 0 210 1.0
+[[ $want == all || $want == 3 ]] && build 3 assets/music_src/beethoven_moonlight_mvt3.mid 0 252 1.2
 echo "完成。"
